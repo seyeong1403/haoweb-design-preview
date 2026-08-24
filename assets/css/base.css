@@ -340,8 +340,13 @@ h1, h2, h3, h4, p, figure { margin: 0; }
      body:has(.hero--iw) .nav:not(.is-stuck):not(.is-open) .nav__link,
      body:has(.hero--iw) .nav:not(.is-stuck):not(.is-open) .nav__burger { color:#fff }
    그리고 로고도 logo-on-dark.png 로. */
+/* ⭐ 2026-08-24 — 메인 히어로에 어두운 사진이 들어와 **다시 흰 내비**다.
+   ⚠ `is-stuck`(스크롤해서 붙은 상태)에서는 아래 규칙이 다시 흰 글자를 준다 — 내비 바가 먹색이라 맞다. */
+body:has(.hero--iw) .nav:not(.is-stuck):not(.is-open) .nav__link,
+body:has(.hero--iw) .nav:not(.is-stuck):not(.is-open) .nav__burger,
 body:has(.subhero) .nav:not(.is-stuck):not(.is-open) .nav__link,
 body:has(.subhero) .nav:not(.is-stuck):not(.is-open) .nav__burger { color: #fff; }
+body:has(.hero--iw) .nav:not(.is-stuck):not(.is-open) .nav__logo img,
 body:has(.subhero) .nav:not(.is-stuck):not(.is-open) .nav__logo img {
   content: url('../img/logo-on-dark.png');
 }
@@ -576,7 +581,8 @@ body:has(.navpanel[data-open='true']) .nav {
 /* ⛔ 2026-08-24 세영 지시로 히어로 배경을 비웠다. 새 배경이 올 때까지 어두운 판이 대신한다.
    ⚠ 비우기만 하면 안 된다 — 히어로 글자가 흰색이라 밝은 바탕에서는 통째로 사라진다.
    새 그림·영상이 들어오면 그 뒤에 가려 보이지 않으므로 이 규칙은 그대로 둬도 된다. */
-.hero__img--empty { background: #f9f9f9; }   /* ⛔ 2026-08-24 — 어두운 판 → 밝은 판 */
+/* ⚠ 사진이 들어와 지금은 쓰이지 않는다. 배경을 다시 비우면 이 클래스를 쓴다. */
+.hero__img--empty { background: #f9f9f9; }
 /* ⭐⭐ 어두운 구간 — 히어로부터 업종별 제작 행까지만 (2026-08-16 세영 지시).
    ⚠⚠ **z-index 로는 해결되지 않는다.** 한 번 z6(막은 z5)으로 올려 봤지만 메인 전체가 계속
      어두웠다. 원인은 쌓임 순서가 아니라 **아래 섹션들이 배경색을 갖지 않는 것**이었다 —
@@ -602,10 +608,13 @@ body:has(.navpanel[data-open='true']) .nav {
 /* 레퍼런스 영상은 그 자체로 어두워 스크림이 없다. 우리는 정지 이미지라 밝기 편차가 커서
    글자가 앉는 위·아래만 얇게 눌러 준다(가운데는 건드리지 않아 사진이 그대로 보인다). */
 .hero--iw .hero__scrim {
-  /* ⛔ 2026-08-24 — 먹색 알파를 흰 알파로 뒤집었다. **세기(숫자)는 그대로 둔다** —
-     나중에 사진·영상이 들어와도 위·아래에서 먹색 글자를 지켜 주는 역할은 같다. */
+  /* ⭐ 2026-08-24 — 사진이 들어와 **다시 먹색 알파**다. 글자가 가운데 모여 있으므로
+     레퍼런스처럼 위·아래만 누르지 않고 **가운데를 가장 진하게** 눌러 준다.
+     ⚠ 값은 눈대중이 아니라 **대비를 재서** 정했다. 제일 빡빡한 건 `HAOWEB`(포인트 컬러)이다 —
+       141px 큰 글자라 3:1 만 넘으면 되는데 .70 에서 2.4:1 이었다. .82 로 통과한다.
+       ⚠ 사진을 바꾸면 반드시 다시 잴 것 — 밝은 사진이면 더 눌러야 한다. */
   background: linear-gradient(to bottom,
-    rgba(255,255,255,.52) 0%, rgba(255,255,255,.12) 34%, rgba(255,255,255,.16) 62%, rgba(255,255,255,.62) 100%);
+    rgba(16,16,16,.72) 0%, rgba(16,16,16,.82) 34%, rgba(16,16,16,.82) 62%, rgba(16,16,16,.74) 100%);
 }
 /* ⭐ 스크롤하면 배경이 어두워진다 — interwise 실측 이식 (2026-08-16 세영 지시).
    실측(`scratchpad/probe_motion.py`): 레퍼런스는 `div.main-inner` 의 **배경색 알파**가
@@ -631,11 +640,10 @@ body:has(.navpanel[data-open='true']) .nav {
   padding-block: var(--nav-h) 0;
   padding-inline: 2.5vw;
   justify-content: center; align-items: center; text-align: center;
-  /* ⛔ 2026-08-24 — 여기서 흰색을 못 박고 있어서 `.darkzone` 의 글자색을 먹색으로 바꿔도
-     큰 문장(.hero__lede)과 워드마크(.hero__mark)가 흰 바탕에 흰 글자로 남았다(캡처로 확인).
-     ⚠ 두 요소는 자기 색 규칙이 없다 — **여기서 물려받는다.** 어두운 배경을 다시 넣으면
-       이 줄을 `color:#fff` 로 되돌려야 한다. */
-  color: var(--fg);
+  /* ⭐ 2026-08-24 — 사진이 들어와 **다시 흰색**이다(배경을 비웠던 동안만 먹색이었다).
+     ⚠ 안쪽 글자(.hero__brand·.hero__lede·.hero__sub)는 자기 색 규칙이 없고 여기서 물려받는다.
+       배경을 밝은 것으로 바꾸면 이 줄을 `var(--fg)` 로 되돌릴 것. */
+  color: #fff;
 }
 /* ⚠ `--muted`(#6e6a60)는 흰 바탕용이라 어두운 히어로에서 대비가 3:1 아래로 떨어진다.
    어두운 면 안에서는 흰색 알파로 단계를 만든다(README 의 `.invert` 와 같은 처리). */
@@ -652,13 +660,10 @@ body:has(.navpanel[data-open='true']) .nav {
   font-family: var(--font-kr); font-weight: 400;
   font-size: 3.2vw; line-height: 1.2; letter-spacing: -.02em;
 }
-/* 서브카피 — 레퍼런스에는 없는 우리 것(세영 요청). 큰 문장과 워드마크 사이에 놓이므로
-   둘 중 어느 쪽과도 크기가 겹치지 않게 작게 간다. 흰 글자라 알파로 단계를 만든다. */
-.hero__sub {
-  margin: 26px 0 0; max-width: 720px;
-  /* ⛔ 2026-08-24 — 흰 알파 → 먹색 알파. 이 규칙은 index 히어로에서만 쓰인다. */
-  font-size: var(--t-lead); line-height: 1.65; color: rgba(23,21,15,.82);
-}
+/* ⚠⚠ 옛 `.hero__sub` 블록을 지웠다(2026-08-24). 레퍼런스 배치로 다시 짜면서 아래쪽에
+     새 `.hero__sub` 를 만들었는데 **이 옛 블록이 남아 색만 물려주고 있었다** — 새 블록은
+     `color` 를 안 써서, 배경을 비웠던 시절의 먹색이 어두운 사진 위에 그대로 얹혀 1.5:1 이었다.
+     같은 선택자를 두 곳에 두지 말 것. 새 블록은 「히어로 가운데 글 블록」 주석 아래에 있다. */
 /* ⛔ 2026-08-24 세영 지시로 **「We make you findable.」 워드마크를 뺐다**
      (레퍼런스 배치로 바꾸면서 그 자리가 없어졌다). 규칙만 남기면 죽은 코드가 되어 지웠다.
      되살리려면 커밋 이력에서 `.hero__mark` 블록과 조각의 `<p class="hero__mark">` 한 줄을 되돌린다.
@@ -676,11 +681,13 @@ body:has(.navpanel[data-open='true']) .nav {
   width: 100%; max-width: 900px; margin-inline: auto;
   display: flex; flex-direction: column; align-items: center;
 }
+/* ⚠ 사진 위라 `--brand-ink`(어두운 바탕용)가 아니라 밝은 쪽 레드를 쓴다.
+     레퍼런스도 대형 제목만 포인트 컬러다. 139px 큰 글자라 3:1 만 넘으면 된다. */
 .hero__brand {
   margin: 0;
   font-family: var(--font-en); font-weight: 600;
   font-size: clamp(64px, 9.765vw, 150px); line-height: 1.05; letter-spacing: -.025em;
-  color: var(--brand-ink);
+  color: var(--brand-2);
 }
 /* ⚠ 레퍼런스는 대형 제목과 소제목 사이 간격이 **0** 이다(실측 y309+171 = 480, 소제목 y475).
      우리는 국문이라 살짝 띄우지 않으면 붙어 보인다 — 최소한만 준다. */
@@ -694,6 +701,7 @@ body:has(.navpanel[data-open='true']) .nav {
 .hero__sub {
   margin: 30px 0 0; max-width: 720px;
   font-size: var(--t-body); line-height: 1.75;
+  color: rgba(255, 255, 255, .88);   /* 사진 위 잔글씨 — 알파로 한 단계 물러난다 */
 }
 @media (max-width: 900px) {
   .hero__brand { font-size: 15vw; }

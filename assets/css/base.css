@@ -267,19 +267,27 @@ h1, h2, h3, h4, p, figure { margin: 0; }
   width: 100%; max-width: none;
   margin-inline: 0; padding-inline: 2.5vw;
   height: 90px;
-  display: flex; align-items: center; gap: 40px;
+  /* ⭐ 2026-08-24 — 레퍼런스 배치: **로고 좌 · 메뉴 정중앙 · 햄버거 우**.
+     가운데 칸만 늘어나게 해서 메뉴가 화면 정중앙에 오도록 한다(로고·햄버거 폭이 달라도 흔들리지 않는다). */
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px;
 }
+.nav__inner > .nav__logo { justify-self: start; }
+.nav__inner > .nav__burger { justify-self: end; }
 /* 메뉴를 오른쪽 끝으로 민다(레퍼런스는 로고와 메뉴가 양 끝에 있다). */
-.nav__links { display: flex; align-items: center; gap: 0; margin-left: auto; }
+/* ⚠ `margin-left:auto`(우측 밀기)를 뺐다 — 이제 그리드 가운데 칸이라 저절로 정중앙이다. */
+.nav__links { display: flex; align-items: center; gap: 0; justify-self: center; }
 .nav__link {
   font-size: 15.75px; font-weight: 300; text-transform: none;
   letter-spacing: normal; color: var(--fg); position: relative; display: inline-block;
-  padding-block: 2px; padding-inline: 20px;   /* 실측: li 좌우 20 · 항목 간 gap 0 */
+  /* ⚠ 좌우 20 → 14. **글자 크기는 건드리지 않았다**(부수 텍스트는 크게 보시는 걸 선호하신다).
+     메뉴 9개 합이 1188px 이라 가운데 정렬하면 우측 햄버거와 32px 겹쳤다 — 여백만 줄여 108px 를
+     덜어냈다(2026-08-24 실측). 메뉴가 더 늘면 이 값으로는 안 되니 그때 다시 잴 것. */
+  padding-block: 2px; padding-inline: 14px;
 }
 /* ⚠ 밑줄은 글자 폭에만 — 위에서 `padding-inline:20px` 이 붙어 left:0/width:100% 로 두면
    패딩까지 그어져 항목끼리 선이 이어져 보인다. */
 .nav__link::after {
-  content: ''; position: absolute; left: 20px; bottom: 0; width: calc(100% - 40px); height: 1px;
+  content: ''; position: absolute; left: 14px; bottom: 0; width: calc(100% - 28px); height: 1px;
   background: currentColor; transform: scaleX(0); transform-origin: right;
   transition: transform .35s cubic-bezier(.4,0,.2,1);
 }
@@ -289,7 +297,28 @@ h1, h2, h3, h4, p, figure { margin: 0; }
 /* 흰 바탕이므로 로고도 라이트 배경용을 쓴다(다크용은 `logo-on-dark.png` 로 남아 있다). */
 .nav__logo img { content: url('../img/logo-on-light.png'); }
 .nav__logo:hover img { transform: rotate(-4deg); }
-.nav__burger { display: none; }
+/* ⭐⭐ 햄버거 — 레퍼런스(miracell.co.kr) 실측 그대로 (2026-08-24 세영: "모션도 똑같이").
+     button 120×32 · 선 120×2 · margin 4px auto(선 사이 8px) · 전환 0.4s ease-in-out
+     열면 두 선이 서로 반대로 45도 돌아 **가로로 긴 X** 가 된다.
+   ⚠ 아이콘 두 개를 갈아 끼우지 않는다 — **같은 선이 회전**해야 레퍼런스의 그 느낌이 난다.
+   ⚠ 이 버튼은 이제 데스크톱에도 보인다(전에는 모바일 전용이었다). 누르면 기존 전체 메뉴
+     패널(`.navpanel`)이 열린다 — 새로 만들지 않고 있던 것을 그대로 쓴다. */
+.nav__burger {
+  display: flex; flex-direction: column; justify-content: center;
+  width: 120px; height: 32px; padding: 0; border: 0; background: none; cursor: pointer;
+  box-sizing: border-box;
+}
+.nav__burger .line {
+  display: block; width: 120px; height: 2px; margin: 4px auto;
+  background: currentColor;
+  transition: transform .4s ease-in-out;
+}
+.nav__burger[aria-expanded='true'] .line:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.nav__burger[aria-expanded='true'] .line:nth-child(2) { transform: translateY(-5px) rotate(-45deg); }
+/* ⚠ 좁은 화면에서 120px 선 두 줄은 화면을 다 먹는다. 레퍼런스도 모바일은 짧게 쓴다. */
+@media (max-width: 900px) {
+  .nav__burger, .nav__burger .line { width: 34px; }
+}
 
 /* ⭐ 어두운 히어로를 인 페이지에서는 내비를 흰 글자로 (2026-08-16 — 메인 히어로 이식).
    히어로가 어두워지면서 검정 내비가 통째로 사라졌다(캡처로 확인).
@@ -500,11 +529,13 @@ body:has(.subhero) .nav:not(.is-stuck):not(.is-open) .nav__logo img {
      같은 #f9f9f9 여야 경계가 안 보인다(원래 검정끼리 맞춰 뒀던 것과 같은 이유). */
   background: #f9f9f9; opacity: 0; pointer-events: none;
 }
+/* ⭐⭐ 2026-08-24 — 레퍼런스(miracell.co.kr) 배치로 바꿨다. 좌하단 정렬 → **정중앙**.
+   실측: 글 블록 폭 480 · 화면 정중앙 · 세로 중앙. */
 .hero--iw .hero__inner {
-  max-width: none; margin-inline: 0;   /* 컨테이너(1280)를 벗기고 화면 폭을 쓴다 */
-  padding-block: 150px 0;              /* 실측 y150 — 윗 문장 위 여백 */
-  padding-inline: 2.5vw;               /* 실측 36px */
-  justify-content: flex-start;
+  max-width: none; margin-inline: 0;
+  padding-block: var(--nav-h) 0;
+  padding-inline: 2.5vw;
+  justify-content: center; align-items: center; text-align: center;
   /* ⛔ 2026-08-24 — 여기서 흰색을 못 박고 있어서 `.darkzone` 의 글자색을 먹색으로 바꿔도
      큰 문장(.hero__lede)과 워드마크(.hero__mark)가 흰 바탕에 흰 글자로 남았다(캡처로 확인).
      ⚠ 두 요소는 자기 색 규칙이 없다 — **여기서 물려받는다.** 어두운 배경을 다시 넣으면
@@ -533,23 +564,48 @@ body:has(.subhero) .nav:not(.is-stuck):not(.is-open) .nav__logo img {
   /* ⛔ 2026-08-24 — 흰 알파 → 먹색 알파. 이 규칙은 index 히어로에서만 쓰인다. */
   font-size: var(--t-lead); line-height: 1.65; color: rgba(23,21,15,.82);
 }
-/* 하단 초대형 워드마크. 레퍼런스는 좌우 여백에 **정확히 꽉 차게** 맞춰 놓았다(실측 w1368/1368).
-   ⚠⚠ 크기가 문구 길이에 묶여 있다. 레퍼런스 실측값 12.51vw 를 그대로 쓰면
-     우리 문구(`we make it found:`)가 **1414px 로 46px 넘쳐** 콜론이 화면 밖에서 잘렸다.
-     레퍼런스와 폰트가 달라(Poppins → Pretendard) 글자 폭이 다르기 때문에 생기는 차이다.
-   ⚠ **문구를 바꾸면 이 값을 다시 재야 한다** — `python scratchpad/measure_hero.py` 가
-     글자 실폭과 배율을 찍어 준다. 눈대중으로 고치지 말 것.
-     이력: 「we make it found:」 12.1vw → 「we make it findable:」 로 바꾸자 1544/1368 로
-           176px 넘쳐 **10.7vw** 로 다시 맞췄다(2026-08-16).
-           → 「We make you findable.」 로 또 바뀌었는데 값을 안 고쳐 **183px 넘쳐 잘려
-             있었다**(2026-08-17 실측 1535/1353). 컨테이너가 1360 으로 넓어진 것도 겹쳤다.
-             **9.4vw** 로 다시 맞췄다. 주석의 경고가 그대로 재현된 사례다. */
-.hero__mark {
-  margin: auto 0 0; padding-bottom: 2.2vh;
-  font-family: var(--font-en); font-weight: 700;
-  font-size: 9.4vw; line-height: .9; letter-spacing: -.025em;
-  white-space: nowrap;
+/* ⛔ 2026-08-24 세영 지시로 **「We make you findable.」 워드마크를 뺐다**
+     (레퍼런스 배치로 바꾸면서 그 자리가 없어졌다). 규칙만 남기면 죽은 코드가 되어 지웠다.
+     되살리려면 커밋 이력에서 `.hero__mark` 블록과 조각의 `<p class="hero__mark">` 한 줄을 되돌린다.
+     ⚠ 그때 **글자 폭을 다시 재야 한다** — 문구 길이에 크기가 묶여 있어 눈대중으로 고치면 잘린다. */
+/* ── 히어로 가운데 글 블록 — 레퍼런스 실측 그대로 ─────────────────────────────
+   레퍼런스 값(1425px 기준)과 화면 폭 대비 비율
+     대형 제목  139.151px = 9.765vw · w600 · 자간 -3.48px(= -0.025em)
+     소제목      27.830px = 1.953vw · w500
+     블록 폭    480px (글이 그 폭 안에서 접힌다)
+   ⚠ 우리 소제목은 **국문 한 문장**이라 480px 로 묶으면 네 줄이 된다.
+     레퍼런스의 '한 줄로 떨어지는' 인상을 살리려고 소제목·잔글씨만 폭을 넓혔다.
+   ⚠ 대형 제목은 `HAOWEB` 여섯 글자다. 문구가 바뀌면 vw 값을 다시 재야 한다
+     (레퍼런스도 글자 수에 맞춰 잡은 값이다). */
+.hero__center {
+  width: 100%; max-width: 900px; margin-inline: auto;
+  display: flex; flex-direction: column; align-items: center;
 }
+.hero__brand {
+  margin: 0;
+  font-family: var(--font-en); font-weight: 600;
+  font-size: clamp(64px, 9.765vw, 150px); line-height: 1.05; letter-spacing: -.025em;
+  color: var(--brand-ink);
+}
+/* ⚠ 레퍼런스는 대형 제목과 소제목 사이 간격이 **0** 이다(실측 y309+171 = 480, 소제목 y475).
+     우리는 국문이라 살짝 띄우지 않으면 붙어 보인다 — 최소한만 준다. */
+.hero__lede {
+  margin: 14px 0 0; max-width: 780px;
+  font-family: var(--font-kr); font-weight: 500;
+  font-size: clamp(18px, 1.953vw, 28px); line-height: 1.5; letter-spacing: -.02em;
+}
+/* 잔글씨 — 레퍼런스에는 대응물이 없다. 세영 지시로 "하단에 알맞게" 넣은 자리다.
+   소제목보다 확실히 물러나야 세 단이 위에서 아래로 읽힌다. */
+.hero__sub {
+  margin: 30px 0 0; max-width: 720px;
+  font-size: var(--t-body); line-height: 1.75;
+}
+@media (max-width: 900px) {
+  .hero__brand { font-size: 15vw; }
+  .hero__lede { font-size: 18px; margin-top: 12px; }
+  .hero__sub { margin-top: 22px; font-size: var(--t-sm); }
+}
+
 /* 좁은 화면 — 4vw/12.1vw 를 그대로 두면 글자가 손톱만 해진다. 비율만 유지하고 크기를 올린다.
    ⚠ 워드마크의 `nowrap` 을 **반드시 푼다.** 레퍼런스 모바일도 여러 줄로 접는다
      (실측: "we are / creative: / *interwise" 3줄). 안 풀면 한 줄이 화면을 넘어

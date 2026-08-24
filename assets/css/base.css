@@ -265,8 +265,9 @@ h1, h2, h3, h4, p, figure { margin: 0; }
      레퍼런스(x36)와 어긋난다. 화면 폭을 쓰고 좌우 여백만 36px 준다. */
 .nav__inner {
   width: 100%; max-width: none;
-  margin-inline: 0; padding-inline: 2.5vw;
-  height: 90px;
+  /* ⭐ 2026-08-24 — 레퍼런스(miracell) 실측: 헤더 높이 80 · 좌우 여백 30(로고 x30, 햄버거 우단 1395). */
+  margin-inline: 0; padding-inline: 30px;
+  height: 80px;
   /* ⭐ 2026-08-24 — 레퍼런스 배치: **로고 좌 · 메뉴 정중앙 · 햄버거 우**.
      가운데 칸만 늘어나게 해서 메뉴가 화면 정중앙에 오도록 한다(로고·햄버거 폭이 달라도 흔들리지 않는다). */
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px;
@@ -277,17 +278,22 @@ h1, h2, h3, h4, p, figure { margin: 0; }
 /* ⚠ `margin-left:auto`(우측 밀기)를 뺐다 — 이제 그리드 가운데 칸이라 저절로 정중앙이다. */
 .nav__links { display: flex; align-items: center; gap: 0; justify-self: center; }
 .nav__link {
-  font-size: 15.75px; font-weight: 300; text-transform: none;
+  /* ⭐ 레퍼런스 실측 16.2343px / weight 500. 우리는 300 이었다. */
+  font-size: 16.23px; font-weight: 500; text-transform: none;
   letter-spacing: normal; color: var(--fg); position: relative; display: inline-block;
   /* ⚠ 좌우 20 → 14. **글자 크기는 건드리지 않았다**(부수 텍스트는 크게 보시는 걸 선호하신다).
      메뉴 9개 합이 1188px 이라 가운데 정렬하면 우측 햄버거와 32px 겹쳤다 — 여백만 줄여 108px 를
      덜어냈다(2026-08-24 실측). 메뉴가 더 늘면 이 값으로는 안 되니 그때 다시 잴 것. */
-  padding-block: 2px; padding-inline: 14px;
+  /* ⚠ 레퍼런스 항목은 **헤더 전체 높이(80)** 를 차지한다 — 눌리는 면적이 그만큼 넓다.
+     좌우는 12px. 글자가 커지고 굵어진 만큼 여백을 한 번 더 줄여야 9개가 들어간다
+     (레퍼런스는 영문 6개라 여유가 크다). */
+  height: 80px; display: inline-flex; align-items: center;
+  padding-block: 0; padding-inline: 12px;
 }
 /* ⚠ 밑줄은 글자 폭에만 — 위에서 `padding-inline:20px` 이 붙어 left:0/width:100% 로 두면
    패딩까지 그어져 항목끼리 선이 이어져 보인다. */
 .nav__link::after {
-  content: ''; position: absolute; left: 14px; bottom: 0; width: calc(100% - 28px); height: 1px;
+  content: ''; position: absolute; left: 12px; bottom: 22px; width: calc(100% - 24px); height: 1px;
   background: currentColor; transform: scaleX(0); transform-origin: right;
   transition: transform .35s cubic-bezier(.4,0,.2,1);
 }
@@ -387,14 +393,15 @@ body:has(.subhero) .nav:not(.is-stuck):not(.is-open) .nav__logo img {
   transition: width .6s cubic-bezier(.4, 0, .2, 1);
 }
 .navpanel[data-open='true'] .navpanel__bg { width: 100%; }
-/* ⚠⚠ 패널이 열리면 **헤더 메뉴가 검은 면 위에 먹색 글자로 남아 사라진다**(캡처로 확인).
-     레퍼런스도 사이트맵이 열리면 헤더 글자가 흰색이다. 로고도 어두운 면용으로 바꾼다.
-     ⚠ 햄버거 자신은 `currentColor` 를 쓰므로 이 규칙 하나로 선까지 같이 희어진다. */
-body:has(.navpanel[data-open='true']) .nav__link,
-body:has(.navpanel[data-open='true']) .nav__burger { color: #fff; }
-body:has(.navpanel[data-open='true']) .nav__logo img { content: url('../img/logo-on-dark.png'); }
-/* 패널이 헤더를 덮지 않게 — 닫기 버튼과 햄버거가 둘 다 보여야 한다. */
-.navpanel { padding-top: 0; }
+/* ⭐⭐ 2026-08-24 세영 지적 — "레퍼런스는 햄버거를 눌러도 상단에 크게 X 가 있지 않아."
+     맞다. 레퍼런스는 사이트맵이 열리면 **헤더가 통째로 사라지고** 우상단 원형 × 하나만 남는다.
+     우리는 헤더를 남겨 둬서 큰 X 가 같이 보였다 — 헤더를 감춘다.
+     ⚠ 그래서 아까 넣었던 「패널 열리면 헤더 글자 흰색」 규칙은 필요 없어졌다(헤더가 안 보인다).
+     ⚠ `visibility` 로 감춘다 — `display:none` 이면 되돌아올 때 자리가 튄다. */
+body:has(.navpanel[data-open='true']) .nav {
+  opacity: 0; visibility: hidden;
+  transition: opacity .3s ease, visibility .3s ease;
+}
 .navpanel__inner {
   position: relative; z-index: 1;
   width: 100%; max-width: 1380px; margin-inline: auto; padding-inline: 30px;
@@ -403,13 +410,12 @@ body:has(.navpanel[data-open='true']) .nav__logo img { content: url('../img/logo
 }
 .navpanel[data-open='true'] .navpanel__inner { opacity: 1; transition-delay: .4s; }
 .navpanel__title {
-  /* 레퍼런스 실측 y102. 우리 헤더가 90px 이라 그 아래로 자연스럽게 떨어진다. */
-  margin: 0; padding-top: 118px;
+  margin: 0; padding-top: 102px;   /* 레퍼런스 실측 y102 — 헤더가 사라지므로 그대로 쓴다 */
   font-family: var(--font-en); font-size: clamp(34px, 3.87vw, 56px); font-weight: 700;
   letter-spacing: -.004em; color: #fff;
 }
 .navpanel__close {
-  position: absolute; top: 126px; right: 30px;
+  position: absolute; top: 114px; right: 30px;   /* 레퍼런스 실측 y114 */
   width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
   background: #fff; color: #111;
   display: flex; align-items: center; justify-content: center;

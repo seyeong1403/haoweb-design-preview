@@ -292,12 +292,12 @@ h1, h2, h3, h4, p, figure { margin: 0; }
 }
 /* ⚠ 밑줄은 글자 폭에만 — 위에서 `padding-inline:20px` 이 붙어 left:0/width:100% 로 두면
    패딩까지 그어져 항목끼리 선이 이어져 보인다. */
-.nav__link::after {
-  content: ''; position: absolute; left: 12px; bottom: 22px; width: calc(100% - 24px); height: 1px;
-  background: currentColor; transform: scaleX(0); transform-origin: right;
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
-}
-.nav__link:hover::after, .nav__link[aria-current='page']::after { transform: scaleX(1); transform-origin: left; }
+/* ⭐ 2026-08-24 — 레퍼런스는 **밑줄이 아니라 글자색**이 포인트 컬러로 바뀐다
+     (`#gnb > ul > li > a:hover, .on > a { color: var(--main-color) }` · 전환 all .4s ease-in-out).
+     현재 페이지 표시(`aria-current`)도 같은 방식이다. 밑줄 와이프는 걷어냈다.
+   ⚠ 16.23px 는 작은 글자라 `--brand`(흰 바탕 4.19)로는 기준(4.5)을 못 넘는다 → `--brand-ink`. */
+.nav__link { transition: color .4s ease-in-out; }
+.nav__link:hover, .nav__link[aria-current='page'] { color: var(--brand-ink); }
 .nav__logo { display: flex; align-items: center; height: 32px; flex: none; }
 .nav__logo img { height: 30px; width: auto; transition: transform .3s ease; }
 /* 흰 바탕이므로 로고도 라이트 배경용을 쓴다(다크용은 `logo-on-dark.png` 로 남아 있다). */
@@ -348,34 +348,58 @@ body:has(.subhero) .nav:not(.is-stuck):not(.is-open) .nav__logo img {
 
 /* 2뎁스 드롭다운 — 레퍼런스에 없던 요소라 레퍼런스 어휘로만 구성:
    2색 / radius 0 / 그림자 없음 / 1px 룰 / 괄호 라벨 / 언더라인 와이프 / 같은 이징 */
-.nav__group { display: flex; align-items: center; }
+/* ⚠ `position: relative` 가 반드시 있어야 한다. 없으면 드롭다운(`.mm`)이 이 칸이 아니라
+     더 위의 기준점에 붙어 **화면 폭을 통째로 쓴다**(2026-08-24 실측 1461px).
+     레퍼런스는 항목 폭 + 좌우 2rem 만큼만 넓은 알약이다. */
+.nav__group { position: relative; display: flex; align-items: center; }
+/* ⭐⭐ 2등 메뉴(드롭다운) — 레퍼런스(miracell) 모션 실측 이식 (2026-08-24 세영 지시).
+   레퍼런스 실측값 (`#gnb.each-menu` · 그쪽 1rem = 9.277px 이라 px 로 환산했다)
+     .gnb-2dep        top calc(80px-10px)=70 · left -2rem(-18.6) · width calc(100%+4rem)(+37.1)
+                      visibility hidden · opacity 0 · transition .2s cubic-bezier(.4,0,1,1)
+     .gnb-2dep::before  포인트 컬러 알약 · border-radius 2rem(18.6) · height 0 → 100%
+     .gnb-2dep ul      padding 15px 0        li  padding 8px 10px · opacity 0
+     .open ul li       opacity 1 · transition all .8s ease-in-out · delay .1s 씩 차례로
+     li a              14px w400 가운데정렬 흰색 opacity .9 → hover 1
+   ⚠ 예전에는 화면 폭을 다 쓰는 흰 판이었다. 레퍼런스는 **항목 폭에 붙는 알약**이다. */
 .mm {
-  position: absolute; top: 100%; left: 0; right: 0;
-  background: var(--bg);
-  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-  opacity: 0; visibility: hidden; pointer-events: none;
-  transform: translateY(-6px);
-  transition: opacity .3s cubic-bezier(.4,0,.2,1), transform .3s cubic-bezier(.4,0,.2,1), visibility .3s;
+  position: absolute; top: 70px; left: -18.6px; width: calc(100% + 37.1px);
+  z-index: 99; text-align: left;
+  visibility: hidden; opacity: 0; pointer-events: none;
+  transition: opacity .2s cubic-bezier(.4, 0, 1, 1), visibility .2s cubic-bezier(.4, 0, 1, 1);
 }
-.nav__group[data-open='true'] .mm { opacity: 1; visibility: visible; pointer-events: auto; transform: none; }
-.mm__inner {
-  width: 100%; max-width: var(--container); margin-inline: auto;
-  padding: 36px var(--gutter) 44px;
+/* 포인트 컬러 알약 — 위에서 아래로 자란다. 이게 이 모션의 핵심이다. */
+.mm::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 0;
+  background: var(--brand-fill); border-radius: 18.6px;
+  transition: height .2s cubic-bezier(.4, 0, 1, 1);
 }
-.mm__eyebrow { font-size: var(--t-eyebrow); color: var(--muted); margin-bottom: 22px; }
-.mm__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px 40px; }
+.nav__group[data-open='true'] .mm { visibility: visible; opacity: 1; pointer-events: auto; }
+.nav__group[data-open='true'] .mm::before { height: 100%; }
+.mm__inner { position: relative; z-index: 1; width: 100%; max-width: none; margin-inline: 0; padding: 0; }
+/* ⚠ 레퍼런스 드롭다운에는 **대분류 이름을 다시 적지 않는다**(바로 위 메뉴에 이미 있다).
+     우리 것이라 지웠다 — 화면에서만 감추고 마크업은 남겨 낭독기에는 읽힌다. */
+.mm__eyebrow { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.mm__grid { display: block; padding: 15px 0; }
 .mm__link {
-  font-size: var(--t-sm); color: var(--fg); position: relative; justify-self: start;
-  padding-bottom: 2px;
+  display: block; padding: 8px 10px;
+  font-size: 14px; font-weight: 400; line-height: 1.4; text-align: center;
+  color: #fff; opacity: 0;
+  transition: opacity .25s ease;
 }
-.mm__link::after {
-  content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 1px;
-  background: currentColor; transform: scaleX(0); transform-origin: right;
-  transition: transform .35s cubic-bezier(.4,0,.2,1);
-}
-.mm__link:hover::after, .mm__link[aria-current='page']::after { transform: scaleX(1); transform-origin: left; }
-.mm__link.is-soon, .navpanel__link.is-soon { color: var(--muted); pointer-events: none; }
-.mm__link.is-soon::after { display: none; }
+/* 한 줄씩 차례로 — 레퍼런스 실측: 각 .8s ease-in-out, 0.1초 간격 */
+.nav__group[data-open='true'] .mm__link { opacity: .9; transition: all .8s ease-in-out; }
+.nav__group[data-open='true'] .mm__link:nth-child(1) { transition-delay: .1s; }
+.nav__group[data-open='true'] .mm__link:nth-child(2) { transition-delay: .2s; }
+.nav__group[data-open='true'] .mm__link:nth-child(3) { transition-delay: .3s; }
+.nav__group[data-open='true'] .mm__link:nth-child(4) { transition-delay: .4s; }
+.nav__group[data-open='true'] .mm__link:nth-child(5) { transition-delay: .5s; }
+.nav__group[data-open='true'] .mm__link:nth-child(6) { transition-delay: .6s; }
+.nav__group[data-open='true'] .mm__link:nth-child(7) { transition-delay: .7s; }
+.nav__group[data-open='true'] .mm__link:nth-child(8) { transition-delay: .8s; }
+.nav__group[data-open='true'] .mm__link:nth-child(n+9) { transition-delay: .9s; }
+.mm__link:hover, .mm__link[aria-current='page'] { opacity: 1; }
+.mm__link.is-soon { opacity: .45; pointer-events: none; }
+.navpanel__link.is-soon { color: rgba(255, 255, 255, .38); pointer-events: none; }
 
 /* 모바일 패널 */
 /* ⭐⭐ 사이트맵 패널 — 레퍼런스(miracell.co.kr) 실측 이식 (2026-08-24 세영 지시).

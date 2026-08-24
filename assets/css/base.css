@@ -372,18 +372,83 @@ body:has(.subhero) .nav:not(.is-stuck):not(.is-open) .nav__logo img {
 .mm__link.is-soon::after { display: none; }
 
 /* 모바일 패널 */
+/* ⭐⭐ 사이트맵 패널 — 레퍼런스(miracell.co.kr) 실측 이식 (2026-08-24 세영 지시).
+   ⚠ 예전에는 흰 바탕에 목록이 세로로 길게 이어지는 모바일용 패널이었다.
+     이제 데스크톱에서도 햄버거로 열리므로 레퍼런스와 같은 **검은 면 + 칸 나눔**으로 바꿨다. */
 .navpanel {
-  position: fixed; inset: 0; z-index: 49; background: var(--bg); color: var(--fg);
-  padding: calc(var(--nav-h) + 8px) 0 48px;
-  transform: translateY(-100%); transition: transform .5s cubic-bezier(.4,0,.2,1);
-  overflow-y: auto; overscroll-behavior: contain;
+  position: fixed; inset: 0; z-index: 49;
+  visibility: hidden; pointer-events: none;
+  overflow-y: auto;
 }
-.navpanel[data-open='true'] { transform: translateY(0); }
-.navpanel__inner { padding-inline: var(--gutter); }
-.navpanel__group { padding: 22px 0; border-top: 1px solid var(--border); }
-.navpanel__group:first-child { border-top: 0; }
-.navpanel__h { font-size: var(--t-eyebrow); color: var(--muted); margin-bottom: 14px; }
-.navpanel__link { display: block; padding: 9px 0; font-size: 17px; font-weight: 500; }
+.navpanel[data-open='true'] { visibility: visible; pointer-events: auto; }
+/* 배경 — 오른쪽에서 왼쪽으로 덮는다(레퍼런스 실측: width 0 → 100%, 0.6s). */
+.navpanel__bg {
+  position: fixed; inset: 0 0 0 auto; width: 0; background: #0b0b0b;
+  transition: width .6s cubic-bezier(.4, 0, .2, 1);
+}
+.navpanel[data-open='true'] .navpanel__bg { width: 100%; }
+/* ⚠⚠ 패널이 열리면 **헤더 메뉴가 검은 면 위에 먹색 글자로 남아 사라진다**(캡처로 확인).
+     레퍼런스도 사이트맵이 열리면 헤더 글자가 흰색이다. 로고도 어두운 면용으로 바꾼다.
+     ⚠ 햄버거 자신은 `currentColor` 를 쓰므로 이 규칙 하나로 선까지 같이 희어진다. */
+body:has(.navpanel[data-open='true']) .nav__link,
+body:has(.navpanel[data-open='true']) .nav__burger { color: #fff; }
+body:has(.navpanel[data-open='true']) .nav__logo img { content: url('../img/logo-on-dark.png'); }
+/* 패널이 헤더를 덮지 않게 — 닫기 버튼과 햄버거가 둘 다 보여야 한다. */
+.navpanel { padding-top: 0; }
+.navpanel__inner {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 1380px; margin-inline: auto; padding-inline: 30px;
+  /* 글은 배경이 다 덮은 뒤에 뜬다 — 레퍼런스도 0.4s 늦춘다. */
+  opacity: 0; transition: opacity .3s ease;
+}
+.navpanel[data-open='true'] .navpanel__inner { opacity: 1; transition-delay: .4s; }
+.navpanel__title {
+  /* 레퍼런스 실측 y102. 우리 헤더가 90px 이라 그 아래로 자연스럽게 떨어진다. */
+  margin: 0; padding-top: 118px;
+  font-family: var(--font-en); font-size: clamp(34px, 3.87vw, 56px); font-weight: 700;
+  letter-spacing: -.004em; color: #fff;
+}
+.navpanel__close {
+  position: absolute; top: 126px; right: 30px;
+  width: 40px; height: 40px; border-radius: 50%; border: 0; cursor: pointer;
+  background: #fff; color: #111;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .3s ease;
+}
+.navpanel__close svg { width: 18px; height: 18px; }
+.navpanel__close:hover { transform: rotate(90deg); }
+/* 칸 — 레퍼런스 실측 230px. 우리는 9개라 6+3 으로 접힌다. */
+.navpanel__cols {
+  margin-top: 78px; padding-bottom: 90px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.navpanel__group {
+  padding: 0 28px 40px;
+  border-left: 1px solid rgba(255, 255, 255, .1);
+  border-top: 0;
+}
+/* ⚠ 각 줄의 첫 칸은 왼쪽 선을 지운다 — 안 그러면 목록 왼쪽에 선이 하나 더 생긴다.
+     칸이 6개씩 접히므로 1·7번째가 그 자리다. */
+.navpanel__group:nth-child(6n + 1) { border-left: 0; }
+.navpanel__h {
+  margin: 0 0 34px; min-height: 72px;
+  font-size: clamp(20px, 1.95vw, 28px); font-weight: 600; line-height: 1.3;
+  letter-spacing: -.008em; color: #fff;
+}
+.navpanel__link {
+  display: block; padding: 9px 0;
+  font-size: clamp(15px, 1.29vw, 18.5px); font-weight: 300; line-height: 1.3;
+  color: rgba(255, 255, 255, .82); transition: color .25s ease;
+}
+.navpanel__link:hover, .navpanel__link[aria-current='page'] { color: var(--brand-2); }
+.navpanel__link.is-soon { color: rgba(255, 255, 255, .38); pointer-events: none; }
+@media (max-width: 900px) {
+  .navpanel__title { padding-top: 76px; }
+  .navpanel__close { top: 84px; }
+  .navpanel__cols { margin-top: 48px; grid-template-columns: 1fr; }
+  .navpanel__group { padding: 0 0 30px; border-left: 0; }
+  .navpanel__h { min-height: 0; margin-bottom: 16px; }
+}
 
 /* ---------- 6. 히어로 ---------- */
 .hero {

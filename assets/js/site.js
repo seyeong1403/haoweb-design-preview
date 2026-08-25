@@ -1033,40 +1033,35 @@
 
 
   /* ---------- 차별화된 서비스 슬라이더 ----------
-     2026-08-24 세영 지시로 레퍼런스(baroweb) 「Making Check」 구조를 옮기며 붙였다.
+     레퍼런스(baroweb.kr) 「Making Check」의 Swiper 설정을 **실측해서** 옮겼다
+     (2026-08-24 · `sw.swiper.params` 를 직접 읽었다. 추측 아님).
+       slidesPerView 2 · spaceBetween 25 · speed 800 · loop true · effect slide
+       autoplay { delay 5000 · disableOnInteraction false · waitForTransition true }
+       breakpoints 768→1장(gap 7) · 1024→2장 · 1300→3장(gap 15) · 1700→2장
+     진행바(`.swiper-pagination-progressbar`)는 **현재 위치 비율만큼** 채워진다.
 
-     ⭐ **무한 루프다.** 세영: "카드가 3장밖에 없어서 레퍼런스 같은 모션은 나오기 힘들지?"
-       → 레퍼런스도 같은 방법을 쓴다. 실측해 보니 슬라이드 12장 중 5장이 `swiper-slide-duplicate`
-         였다 — 즉 **원본 8장을 복제해 이어 붙여** 끝없이 도는 것처럼 보이게 한 것이다.
-         우리도 3장을 세 벌(9장)로 깔고, 가운데 벌에서 시작해서 한 벌만큼 벗어나면
-         전환을 잠깐 끄고 제자리로 되돌린다. 눈에는 계속 흐르는 것으로 보인다.
-       ⚠ 다만 **모션이 아니라 가짓수가 다른 것**이다. 레퍼런스는 원본이 8장이라 한 바퀴가 길고,
-         우리는 3장이라 세 번 넘기면 같은 카드가 다시 온다. 더 풍성하게 하려면 카드를 늘려야 한다
-         (내용 문제라 세영 확인이 필요하다).
-
-     ⚠ 복제본은 `aria-hidden` + `inert` 로 접근성 트리에서 뺀다. 안 그러면 화면 낭독기가
-       같은 카드를 세 번 읽고, 탭으로 안 보이는 카드에 들어간다.
-     ⚠ 카드 폭은 CSS 에서 읽지 말고 **실제로 그려진 폭**을 잰다 — 좁은 화면에서
-       `min(398px, 82vw)` 로 달라지기 때문에 고정값을 쓰면 한 칸이 어긋난다. */
+     ⚠ 우리는 Swiper 를 안 쓴다(라이브러리 추가 없이 같은 동작을 만든다).
+       루프는 앞뒤로 한 벌씩 복제해 두고 한 벌을 벗어나면 전환을 끄고 제자리로 되돌린다.
+     ⚠ `disableOnInteraction: false` 라 **눌러도 자동 재생이 멈추지 않는다.** 다만 레퍼런스도
+       누른 직후에는 타이머를 다시 센다(waitForTransition) — 같은 방식으로 재시작한다. */
   function initDiff() {
     var view = document.querySelector('[data-diff-view]');
     var track = document.querySelector('[data-diff-track]');
     if (!view || !track) return;
     var prev = document.querySelector('[data-diff="prev"]');
     var next = document.querySelector('[data-diff="next"]');
+    var fill = document.querySelector('[data-diff-fill]');
 
     var real = [].slice.call(track.children);
     var N = real.length;
     if (!N) return;
 
-    /* 앞뒤로 한 벌씩 복제 — 가운데 벌이 진짜다. */
     function clone(list, where) {
       list.forEach(function (el) {
         var c = el.cloneNode(true);
         c.setAttribute('aria-hidden', 'true');
         c.setAttribute('inert', '');
         c.setAttribute('data-clone', '');
-        /* 등장 모션 표시를 지운다 — 복제본은 이미 화면 안에 있어야 한다. */
         c.removeAttribute('data-fade');
         c.classList.add('on');
         if (where === 'before') track.insertBefore(c, track.firstChild);
@@ -1076,7 +1071,11 @@
     clone(real.slice().reverse(), 'before');
     clone(real, 'after');
 
-    var i = N;                       /* 가운데 벌의 첫 장 */
+    var i = N;
+    var timer = null;
+    var DELAY = 5000;      /* 레퍼런스 실측 */
+    /* ⚠ 전환 시간(레퍼런스 실측 800ms)은 **CSS 한 곳에서만** 정한다.
+       여기서 인라인으로 넣으면 `place()` 가 transition 을 비울 때 사라져 CSS 기본값으로 돈다. */
 
     function step() {
       var card = track.children[0];
@@ -1084,28 +1083,49 @@
       var gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap) || 0;
       return card.getBoundingClientRect().width + gap;
     }
+    /* 진행바 — 지금이 원본 몇 번째인지의 비율만큼 채운다. 한 칸 분량이 최소 폭이다. */
+    function paint() {
+      if (!fill) return;
+      var pos = ((i - N) % N + N) % N;          /* 0 … N-1 */
+      var one = 100 / N;
+      fill.style.width = (one * (pos + 1)) + '%';
+    }
     function place(animate) {
       track.style.transition = animate ? '' : 'none';
       track.style.transform = 'translateX(' + (-i * step()) + 'px)';
-      if (!animate) { track.offsetHeight; track.style.transition = ''; }   /* 강제 리플로우 */
+      if (!animate) { track.offsetHeight; track.style.transition = ''; }
+      paint();
     }
-    /* 한 벌을 벗어나면 티 안 나게 제자리로 되돌린다. */
     function settle() {
       if (i >= N * 2) { i -= N; place(false); }
       else if (i < N) { i += N; place(false); }
     }
-    /* ⚠⚠ `transitionend` 는 **자식에서 올라온다.** 카드 안 등장 모션(`[data-fade]`)도
-       transform 을 쓰기 때문에, 대상을 확인하지 않으면 슬라이드와 무관한 순간에 settle() 이
-       불려 자리가 어긋난다 — 7번 눌러 1번 제자리에 머물렀다(2026-08-24 실측).
-       **트랙 자신이 낸 것만** 받는다. */
+    /* ⚠ `transitionend` 는 자식에서 올라온다 — 트랙 자신 것만 받는다.
+       안 그러면 카드 안 등장 모션이 위치 보정을 엉뚱한 순간에 부른다. */
     track.addEventListener('transitionend', function (e) {
       if (e.target === track && e.propertyName === 'transform') settle();
     });
-    function go(d) { i += d; place(true); }
+    function go(d) { i += d; place(true); restart(); }
 
+    function restart() {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () { go(1); }, DELAY);
+    }
     if (prev) prev.addEventListener('click', function () { go(-1); });
     if (next) next.addEventListener('click', function () { go(1); });
     window.addEventListener('resize', function () { place(false); });
+
+    /* ⚠ 화면 밖에서는 돌리지 않는다 — 안 보이는 곳에서 타이머가 도는 건 낭비다.
+       레퍼런스는 항상 돌지만 결과(보이는 동안 5초마다)는 같고 배터리를 덜 쓴다. */
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting) restart();
+          else if (timer) { clearTimeout(timer); timer = null; }
+        });
+      }, { threshold: .2 }).observe(view);
+    } else restart();
+
     place(false);
   }
 

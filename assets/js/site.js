@@ -222,20 +222,34 @@
       });
     }
 
-    var burger = document.querySelector('[data-burger]');
+    /* ⚠⚠ `querySelector` 는 **첫 번째 하나만** 잡는다. 사이트맵 우상단 닫기(×)도 같은
+       `data-burger` 인데 두 번째라 걸리지 않아 **눌러도 아무 일이 없었다**(2026-08-24 세영 지적).
+       여는 버튼과 닫는 버튼이 따로 있으므로 **전부** 걸어야 한다. */
+    var burgers = [].slice.call(document.querySelectorAll('[data-burger]'));
+    var burger = burgers[0];
     var panel = document.querySelector('[data-navpanel]');
     if (!burger || !panel) return;
-    burger.addEventListener('click', function () {
-      var open = panel.getAttribute('data-open') === 'true';
-      panel.setAttribute('data-open', open ? 'false' : 'true');
-      burger.setAttribute('aria-expanded', open ? 'false' : 'true');
-      document.body.style.overflow = open ? '' : 'hidden';
+    /* ⚠⚠ 이름을 `setPanel` 로 둔다. 이 함수 안에는 **드롭다운용 `setOpen` 이 이미 있다** —
+       같은 이름으로 만들었더니 조용히 덮여서 햄버거가 엉뚱한 함수를 부르고 **내비가 통째로
+       먹통이 됐다**(2026-08-24). 오류도 안 나서 찾는 데 시간이 걸렸다.
+       한 함수 안에서 이름을 다시 쓰지 말 것. */
+    function setPanel(open) {
+      panel.setAttribute('data-open', open ? 'true' : 'false');
+      burgers.forEach(function (b) { b.setAttribute('aria-expanded', open ? 'true' : 'false'); });
+      document.body.style.overflow = open ? 'hidden' : '';
+    }
+    burgers.forEach(function (b) {
+      b.addEventListener('click', function () {
+        setPanel(panel.getAttribute('data-open') !== 'true');
+      });
+    });
+    /* ⚠ Esc 로도 닫힌다 — 전체 화면을 덮는 패널은 빠져나갈 길이 있어야 한다. */
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && panel.getAttribute('data-open') === 'true') setPanel(false);
     });
     panel.querySelectorAll('a').forEach(function (a) {
       a.addEventListener('click', function () {
-        panel.setAttribute('data-open', 'false');
-        burger.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
+        setPanel(false);
       });
     });
   }

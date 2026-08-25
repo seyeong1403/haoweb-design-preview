@@ -3558,9 +3558,13 @@ body:has(.subhero--grad) .nav:not(.is-stuck):not(.is-open) .nav__logo img {
    ⚠ 레드 카드의 흰 글자를 위해 채움은 `--brand-fill`(#d63212) 이다. `--brand`(#e83817)를 쓰면
      흰 글자가 4.19:1 로 기준(4.5)을 못 넘는다(2026-08-24 실측). ── */
 .diff__card--brand { background: var(--brand-fill); color: #fff; }
-.diff__card--brand .diff__q { color: rgba(255, 255, 255, .82); }
+/* ⚠ .82 는 레드 채움 위에서 3.7:1 이라 18px 본문 기준(4.5)을 못 넘는다(2026-08-24 실측).
+     흰색 100% 면 4.86:1 이다. 인용문과 답변은 색이 아니라 **굵기**로 갈린다(q 700 / a 400). */
+.diff__card--brand .diff__q { color: #fff; }
 .diff__card--brand .diff__a b { color: #fff; }
-.diff__card--brand .diff__tags span { color: #fff; background: rgba(255, 255, 255, .20); }
+/* ⚠ 흰 알파 칩은 레드를 **밝게** 만들어 그 위 흰 글자가 3.7:1 로 떨어진다.
+     검은 알파로 바꾸면 칩이 어두워져 흰 글자가 산다. */
+.diff__card--brand .diff__tags span { color: #fff; background: rgba(0, 0, 0, .16); }
 
 .diff__card--gray { background: #f4f4f4; color: #222; }
 .diff__card--gray .diff__q { color: rgba(0, 0, 0, .62); }
